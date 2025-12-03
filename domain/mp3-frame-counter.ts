@@ -10,35 +10,9 @@ const BITRATES = [
 
 const SAMPLE_RATES = [44100, 48000, 32000, 0];
 
-/**
- * Reads the sync-safe integer to find out the size of the ID3v2 tag, see: https://stackoverflow.com/a/5652842
- */
-function readSyncSafeInteger(b: Buffer): number {
-  return (
-    ((b[0] & 0x7f) << 21) |
-    ((b[1] & 0x7f) << 14) |
-    ((b[2] & 0x7f) << 7) |
-    (b[3] & 0x7f)
-  );
-}
+const ID3_HEADER_SIZE = 10;
 
-function validateFrameHeader(header: number): Error | null {
-  const sync = (header >>> 21) & 0x7ff;
-  const version = (header >>> 19) & 0x3;
-  const layer = (header >>> 17) & 0x3;
-
-  if (sync !== 0x7ff || version !== 3 || layer !== 1) {
-    logger.warn("unable to find a valid MPEG Version 1 Layer III frame header");
-
-    return new AppError({
-      message: "The document is not a valid MPEG Version 1 Layer III file.",
-      code: ErrorCodes.invalid_request,
-      parameter: "document",
-    });
-  }
-
-  return null;
-}
+const MPEG_FRAME_HEADER_SIZE = 4;
 
 export async function countMp3Frames(stream: Readable): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -54,13 +28,11 @@ export async function countMp3Frames(stream: Readable): Promise<number> {
     stream.on("data", (chunk) => {
       pending = Buffer.concat([pending, chunk]);
 
-      //
-      // 1. Skip ID3v2 Tag
-      //
-      if (pos === 0 && pending.length >= 10) {
+      // skip ID3v2 Tag
+      if (pos === 0 && pending.length >= ID3_HEADER_SIZE) {
         if (pending.subarray(0, 3).toString() === "ID3") {
           const size = readSyncSafeInteger(pending.subarray(6, 10));
-          skipBytes = 10 + size;
+          skipBytes = ID3_HEADER_SIZE + size;
 
           if (pending.length < skipBytes) return; // wait for more bytes
 
@@ -71,12 +43,10 @@ export async function countMp3Frames(stream: Readable): Promise<number> {
         }
       }
 
-      //
-      // 2. Validate First Frame Header
-      //
-      if (pos === skipBytes && pending.length >= 4) {
-        const header = pending.readUInt32BE(0);
-        const appErr = validateFrameHeader(header);
+      // validate first frame header
+      if (pos === skipBytes && pending.length >= MPEG_FRAME_HEADER_SIZE) {
+        const frameHeader = pending.readUInt32BE(0);
+        const appErr = validateFrameHeader(frameHeader);
         if (appErr) {
           reject(appErr);
           stream.destroy();
@@ -85,13 +55,11 @@ export async function countMp3Frames(stream: Readable): Promise<number> {
 
         logger.debug("validated first frame header successfully");
 
-        channelMode = (header >>> 6) & 0x3;
+        channelMode = (frameHeader >>> 6) & 0x3;
         expectingVBRHeader = true;
       }
 
-      //
-      // 3. Check for Xing/Info VBR Header
-      //
+      // check for and skip VBR header
       if (expectingVBRHeader) {
         const vbrOffset = (channelMode === 3 ? 17 : 32) + 4;
         const required = vbrOffset + 12;
@@ -101,11 +69,11 @@ export async function countMp3Frames(stream: Readable): Promise<number> {
           const tag = vb.subarray(0, 4).toString();
 
           if (tag === "Xing" || tag === "Info") {
-            // TODO: The Xing/Info header seems to have 1 extra frame in it's count in comparison to mediainfo,
-            // so I'm not relying on this for now.
+            // TODO: The frame count in the Xing/Info header seems to have 1 extra frame in comparison to mediainfo,
+            // so I'm not relying on this.
             //
-            // It might be that we can just subtract one and return the frame count (assuming that it's counting
-            // metadata that mediainfo skips)... but it'd need further investigation and isn't neccessary for the task.
+            // I'm guessing mediainfo filters out non-audio metadata... it'd need further investigation but it
+            // isn't strictly neccessary for the task.
 
             // const flags = vb.readUInt32BE(4);
             // if (flags & 0x01) {
@@ -117,14 +85,8 @@ export async function countMp3Frames(stream: Readable): Promise<number> {
             //   return;
             // }
 
-            // Skip the Xing/Info frame.
-            const firstFrameHeader = pending.readUInt32BE(0);
-            const brIdx = (firstFrameHeader >>> 12) & 0xf;
-            const srIdx = (firstFrameHeader >>> 10) & 0x3;
-            const padding = (firstFrameHeader >>> 9) & 0x1;
-            const br = BITRATES[brIdx];
-            const sr = SAMPLE_RATES[srIdx];
-            const frameLength = Math.floor((144 * br) / sr) + padding;
+            const frameHeader = pending.readUInt32BE(0);
+            const frameLength = getFrameLength(frameHeader);
 
             logger.debug(
               `skipping Xing/INFO frame, detected as ${frameLength} bytes`,
@@ -140,38 +102,21 @@ export async function countMp3Frames(stream: Readable): Promise<number> {
         }
       }
 
-      //
-      // 4. Frame-by-frame scan
-      //
-      while (pending.length >= 4) {
-        const header = pending.readUInt32BE(0);
-        const appErr = validateFrameHeader(header);
+      // count all audio frames
+      while (pending.length >= MPEG_FRAME_HEADER_SIZE) {
+        const frameHeader = pending.readUInt32BE(0);
 
-        // Stop if header is invalid, may be metadata.
+        // Stop if the frame header is invalid, may be metadata.
         //
         // TODO: investigate how metadata frames are appended.
-        // We may want to reject here instead.
-        if (appErr) {
+        // We may want to reject here instead?
+        if (validateFrameHeader(frameHeader) !== null) {
           resolve(frameCount);
           stream.destroy();
           return;
         }
 
-        const bitrateIdx = (header >>> 12) & 0xf;
-        const samplerateIdx = (header >>> 10) & 0x3;
-        const padding = (header >>> 9) & 1;
-
-        const bitrate = BITRATES[bitrateIdx];
-        const samplerate = SAMPLE_RATES[samplerateIdx];
-
-        // Invalid frame or metadata.
-        if (!bitrate || !samplerate) {
-          resolve(frameCount);
-          stream.destroy();
-          return;
-        }
-
-        const frameLength = Math.floor((144 * bitrate) / samplerate) + padding;
+        const frameLength = getFrameLength(frameHeader);
 
         // Not enough data to complete frame yet
         if (pending.length < frameLength) break;
@@ -188,4 +133,50 @@ export async function countMp3Frames(stream: Readable): Promise<number> {
 
     stream.on("error", reject);
   });
+}
+
+/**
+ * Reads the sync-safe integer to find out the size of the ID3v2 tag, see: https://stackoverflow.com/a/5652842
+ */
+function readSyncSafeInteger(b: Buffer): number {
+  return (
+    ((b[0] & 0x7f) << 21) |
+    ((b[1] & 0x7f) << 14) |
+    ((b[2] & 0x7f) << 7) |
+    (b[3] & 0x7f)
+  );
+}
+
+/**
+ * Validates that a frame has a valid MPEG Version 1 Layer III header
+ * See another example here: https://chromium.googlesource.com/experimental/chromium/src/+/37.0.2057.4/media/formats/mpeg/mp3_stream_parser.cc
+ */
+function validateFrameHeader(frameHeader: number): Error | null {
+  const sync = (frameHeader >>> 21) & 0x7ff;
+  const version = (frameHeader >>> 19) & 0x3;
+  const layer = (frameHeader >>> 17) & 0x3;
+
+  if (sync !== 0x7ff || version !== 3 || layer !== 1) {
+    logger.warn("unable to find a valid MPEG Version 1 Layer III frame header");
+
+    return new AppError({
+      message: "The document is not a valid MPEG Version 1 Layer III file.",
+      code: ErrorCodes.invalid_request,
+      parameter: "document",
+    });
+  }
+
+  return null;
+}
+
+/**
+ * Gets the size of the frame from the MPEG frame header.
+ */
+function getFrameLength(frameHeader: number): number {
+  const brIdx = (frameHeader >>> 12) & 0xf;
+  const srIdx = (frameHeader >>> 10) & 0x3;
+  const padding = (frameHeader >>> 9) & 0x1;
+  const br = BITRATES[brIdx];
+  const sr = SAMPLE_RATES[srIdx];
+  return Math.floor((144 * br) / sr) + padding;
 }
