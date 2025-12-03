@@ -40,7 +40,7 @@ test("rejects MP3 with invalid version", async () => {
   } catch (err) {
     const appErr = err as AppError;
     expect(appErr.message).toEqual(
-      "document is not a valid MPEG Version 1 Layer III file",
+      "The document is not a valid MPEG Version 1 Layer III file.",
     );
   }
 });

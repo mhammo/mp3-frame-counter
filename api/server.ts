@@ -17,13 +17,7 @@ export async function startWebServer(): Promise<AddressInfo> {
   logger.info(`Starting the web server now`);
 
   const app = Fastify({
-    logger: getConfigValue("logger.prettyPrint")
-      ? {
-          transport: {
-            target: "pino-pretty",
-          },
-        }
-      : true,
+    logger: getLoggerConfig(),
   });
 
   app.setErrorHandler(errorMiddleware(app));
@@ -76,4 +70,24 @@ async function registerCommonPlugins(app: FastifyInstance) {
     origin: "*",
     methods: ["POST"],
   });
+}
+
+function getLoggerConfig() {
+  if (!getConfigValue("logger.enabled")) {
+    return false;
+  }
+
+  if (getConfigValue("logger.prettyPrint")) {
+    return {
+      transport: {
+        target: "pino-pretty",
+        options: {
+          colorize: true,
+          sync: true,
+        },
+      },
+    };
+  }
+
+  return true;
 }

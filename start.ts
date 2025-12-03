@@ -5,11 +5,7 @@ import { getConfigValue, initConfigProvider } from "./lib/config";
 
 errorHandler.listenToErrorEvents();
 initConfigProvider();
-
-logger.configureLogger({
-  level: getConfigValue("logger.level"),
-  prettyPrint: getConfigValue("logger.prettyPrint"),
-});
+logger.configureLogger(getConfigValue("logger"));
 
 startWebServer()
   .then((startResponses) => {

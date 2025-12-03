@@ -3,7 +3,7 @@ import { LogLevel } from "../monitoring";
 
 export type Config = {
   port: number;
-  logger: { level: LogLevel; prettyPrint: boolean };
+  logger: { level: LogLevel; prettyPrint: boolean; enabled: boolean };
 };
 
 export const configSchema: Schema<Config> = {
@@ -14,6 +14,12 @@ export const configSchema: Schema<Config> = {
     env: "PORT",
   },
   logger: {
+    enabled: {
+      format: "Boolean",
+      default: true,
+      nullable: false,
+      env: "LOGGING_ENABLED",
+    },
     level: {
       format: ["debug", "info", "warn", "error"],
       default: "info",

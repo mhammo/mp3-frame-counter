@@ -27,12 +27,13 @@
     "devDependencies": {
         "@types/convict": "^6.1.6",
         "@types/node": "^20.19.25",
+        "axios": "^1.13.2",
+        "form-data": "^4.0.5",
         "is-port-reachable": "^3.0.0",
         "nodemon": "^3.1.0",
         "prettier": "^3.7.3",
         "ts-node": "^10.9.2",
         "typescript": "5.2.2",
-        "vite-tsconfig-paths": "^5.1.4",
         "vitest": "^3.2.4"
     }
 }

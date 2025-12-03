@@ -11,6 +11,7 @@ export interface Logger {
 }
 
 export interface LoggerConfiguration {
+  enabled?: boolean;
   level: LogLevel;
   prettyPrint: boolean;
 }
@@ -23,9 +24,14 @@ export class LoggerWrapper implements Logger {
     return this.#logger!;
   }
 
-  configureLogger({ level, prettyPrint }: Partial<LoggerConfiguration>): void {
+  configureLogger({
+    enabled = true,
+    level,
+    prettyPrint,
+  }: Partial<LoggerConfiguration>): void {
     if (this.#logger === null) {
       this.#logger = pino({
+        enabled,
         level: level ?? "info",
         transport: prettyPrint
           ? {

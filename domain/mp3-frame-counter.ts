@@ -31,7 +31,7 @@ function validateFrameHeader(header: number): Error | null {
     logger.warn("unable to find a valid MPEG Version 1 Layer III frame header");
 
     return new AppError({
-      message: "document is not a valid MPEG Version 1 Layer III file",
+      message: "The document is not a valid MPEG Version 1 Layer III file.",
       code: ErrorCodes.invalid_request,
       parameter: "document",
     });

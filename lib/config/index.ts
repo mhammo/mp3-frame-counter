@@ -3,8 +3,10 @@ import { Config, configSchema } from "./schema";
 
 let convictConfigurationProvider: convict.Config<Config> | undefined;
 
-export function initConfigProvider() {
-  convictConfigurationProvider = convict(configSchema);
+export function initConfigProvider(envOverrides?: NodeJS.ProcessEnv) {
+  convictConfigurationProvider = convict(configSchema, {
+    env: { ...process.env, ...envOverrides },
+  });
   convictConfigurationProvider.validate();
 }
 
