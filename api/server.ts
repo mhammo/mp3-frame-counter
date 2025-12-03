@@ -10,6 +10,7 @@ import { openAPIOptions, openAPIUIOptions } from "./openapi-options";
 import { routes } from "./routes";
 import { errorMiddleware } from "../lib/error-handling";
 import { getConfigValue } from "../lib/config";
+import { randomUUID } from "node:crypto";
 
 let httpServer: Server | undefined;
 
@@ -18,6 +19,9 @@ export async function startWebServer(): Promise<AddressInfo> {
 
   const app = Fastify({
     logger: getLoggerConfig(),
+    genReqId: function () {
+      return randomUUID();
+    },
   });
 
   app.setErrorHandler(errorMiddleware(app));
@@ -65,7 +69,7 @@ async function registerCommonPlugins(app: FastifyInstance) {
       fileSize: 10 * 1024 * 1024,
     },
   });
-  app.register(requestContextPlugin);
+  requestContextPlugin(app);
   app.register(cors, {
     origin: "*",
     methods: ["POST"],

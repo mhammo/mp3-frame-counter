@@ -80,7 +80,7 @@ export class LoggerWrapper implements Logger {
 
   static #insertContextIntoMetadata(metadata?: object): object {
     const requestId = requestContext.get("requestId");
-    return { requestId, ...(metadata ?? {}) };
+    return { reqId: requestId, ...(metadata ?? {}) };
   }
 }
 
