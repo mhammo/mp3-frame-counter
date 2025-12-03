@@ -1,3 +1,3 @@
 export { errorHandler } from "./error-handler";
-export { AppError } from "./app-error";
+export { AppError, ErrorCodes } from "./app-error";
 export { errorMiddleware } from "./middleware";

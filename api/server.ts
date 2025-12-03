@@ -1,17 +1,13 @@
 import cors from "@fastify/cors";
 import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
-import fastifyMultipart, { ajvFilePlugin } from "@fastify/multipart";
+import fastifyMultipart from "@fastify/multipart";
 import Fastify, { FastifyInstance } from "fastify";
 import { Server } from "http";
 import { AddressInfo } from "net";
 import { logger, requestContextPlugin } from "../lib/monitoring";
-import { OpenAPIOptions, OpenAPIUIOptions } from "./open-api-options";
+import { openAPIOptions, openAPIUIOptions } from "./openapi-options";
 import { routes } from "./routes";
-import {
-  serializerCompiler,
-  validatorCompiler,
-} from "fastify-type-provider-zod";
 import { errorMiddleware } from "../lib/error-handling";
 import { getConfigValue } from "../lib/config";
 
@@ -19,19 +15,26 @@ let httpServer: Server | undefined;
 
 export async function startWebServer(): Promise<AddressInfo> {
   logger.info(`Starting the web server now`);
+
   const app = Fastify({
-    logger: true,
-    ajv: {
-      // Adds the file plugin to help @fastify/swagger schema generation
-      plugins: [ajvFilePlugin],
-    },
+    logger: getConfigValue("logger.prettyPrint")
+      ? {
+          transport: {
+            target: "pino-pretty",
+          },
+        }
+      : true,
   });
-  app.setErrorHandler(errorMiddleware);
+
+  app.setErrorHandler(errorMiddleware(app));
+
   await generateOpenAPI(app);
   await registerCommonPlugins(app);
   await registerAllRoutes(app);
+
   const connectionAddress = await listenToRequests(app);
   httpServer = app.server;
+
   return connectionAddress;
 }
 
@@ -43,8 +46,8 @@ export async function stopWebServer() {
 }
 
 async function generateOpenAPI(app: FastifyInstance) {
-  await app.register(fastifySwagger, OpenAPIOptions);
-  await app.register(fastifySwaggerUi, OpenAPIUIOptions);
+  await app.register(fastifySwagger, openAPIOptions);
+  await app.register(fastifySwaggerUi, openAPIUIOptions);
 }
 
 async function registerAllRoutes(app: FastifyInstance) {
@@ -63,9 +66,11 @@ async function listenToRequests(app: FastifyInstance): Promise<AddressInfo> {
 }
 
 async function registerCommonPlugins(app: FastifyInstance) {
-  app.setValidatorCompiler(validatorCompiler);
-  app.setSerializerCompiler(serializerCompiler);
-  app.register(fastifyMultipart);
+  app.register(fastifyMultipart, {
+    limits: {
+      fileSize: 10 * 1024 * 1024,
+    },
+  });
   app.register(requestContextPlugin);
   app.register(cors, {
     origin: "*",

@@ -34,11 +34,20 @@ export const errorHandler = {
 };
 
 export function logError(errorToHandle: unknown): void {
+  if (errorToHandle instanceof AppError && errorToHandle.httpStatus < 500) {
+    logger.warn(errorToHandle.message, {
+      ...errorToHandle,
+      stack: errorToHandle.stack,
+    });
+    return;
+  }
+
   if (errorToHandle instanceof Error) {
     logger.error(errorToHandle.message, {
       ...errorToHandle,
       stack: errorToHandle.stack,
     });
+    return;
   }
 
   logger.error(

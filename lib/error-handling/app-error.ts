@@ -26,11 +26,13 @@ export class AppError extends Error {
   constructor({
     code,
     message,
+    parameter,
     httpStatus = httpStatusForErrorCode.get(code) ?? 500,
     cause,
   }: AppErrorOptions) {
     super(message, { cause });
     this.code = code;
     this.httpStatus = httpStatus;
+    this.parameter = parameter;
   }
 }
