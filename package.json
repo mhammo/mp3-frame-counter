@@ -9,8 +9,8 @@
         "test": "LOGGING_ENABLED=false vitest --watch=false",
         "test:watch": "LOGGING_ENABLED=false vitest",
         "test:watch:verbose": "PRETTY_PRINT=true LOG_LEVEL=debug vitest",
-        "build": "tsc",
-        "build:watch": "tsc --watch",
+        "build": "tsc -p tsconfig.build.json",
+        "build:watch": "tsc -p tsconfig.build.json --watch",
         "format": "prettier --write \"**/*.{ts,tsx,md,js,jsx,cjs,mjs}\"",
         "lint": "eslint --max-warnings 0",
         "lint:fix": "pnpm lint --fix"

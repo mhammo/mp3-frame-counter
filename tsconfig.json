@@ -2,14 +2,14 @@
   "compilerOptions": {
     "target": "es2022",
     "module": "commonjs",
-     "allowJs": true,
-     "checkJs": false,              
-     "outDir": ".dist",     
-    "esModuleInterop": true ,
+    "allowJs": true,
+    "checkJs": false,
+    "outDir": ".dist",
+    "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "noImplicitAny": false,
     "skipLibCheck": true
   },
-  "exclude": ["node_modules", "test-reports/**", "**/*.test.ts"]
+  "exclude": ["node_modules", "test-reports/**"]
 }
