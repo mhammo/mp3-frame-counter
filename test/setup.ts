@@ -1,13 +1,14 @@
-import { afterEach, beforeAll, beforeEach } from "vitest";
-import { initConfigProvider, resetConfig } from "../lib/config";
+import { beforeEach, afterEach, beforeAll } from "vitest";
+import { getConfigValue, initConfigProvider, resetConfig } from "../lib/config";
 import { logger } from "../lib/monitoring";
 
 beforeAll(() => {
-  logger.configureLogger({ enabled: false });
+  initConfigProvider();
+  logger.configureLogger(getConfigValue("logger"));
 });
 
 beforeEach(() => {
-  initConfigProvider({ LOGGING_ENABLED: "false" });
+  initConfigProvider();
 });
 
 afterEach(() => {

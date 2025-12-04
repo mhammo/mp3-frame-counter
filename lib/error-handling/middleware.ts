@@ -1,12 +1,12 @@
-import {
+import type {
   FastifyInstance,
   FastifyError,
   FastifyReply,
   FastifyRequest,
 } from "fastify";
 import "@fastify/multipart";
-import { errorHandler } from "./error-handler";
 import { ErrorCodes } from "./app-error";
+import { errorHandler } from "./error-handler";
 
 export function errorMiddleware(app: FastifyInstance) {
   return function errorMiddleware(

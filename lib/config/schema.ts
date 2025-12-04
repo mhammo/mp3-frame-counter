@@ -1,5 +1,5 @@
-import { Schema } from "convict";
-import { LogLevel } from "../monitoring";
+import type { Schema } from "convict";
+import type { LogLevel } from "../monitoring";
 
 export type Config = {
   port: number;

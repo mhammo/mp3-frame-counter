@@ -1,5 +1,5 @@
 import { fastifyRequestContext } from "@fastify/request-context";
-import { FastifyInstance } from "fastify";
+import type { FastifyInstance } from "fastify";
 
 export const requestContextPlugin = async (app: FastifyInstance) => {
   app.register(fastifyRequestContext, {

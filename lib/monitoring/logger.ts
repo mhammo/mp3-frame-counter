@@ -1,5 +1,6 @@
-import { pino, Logger as PinoLoggerImpl } from "pino";
 import { requestContext } from "@fastify/request-context";
+import type { Logger as PinoLoggerImpl } from "pino";
+import { pino } from "pino";
 
 export type LogLevel = "debug" | "info" | "warn" | "error" | "critical";
 

@@ -1,4 +1,4 @@
-import { Readable } from "stream";
+import type { Readable } from "stream";
 import { AppError, ErrorCodes } from "../lib/error-handling";
 import { logger } from "../lib/monitoring";
 

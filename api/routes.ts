@@ -1,7 +1,7 @@
-import { FastifyInstance, FastifyPluginAsync } from "fastify";
+import type { FastifyInstance, FastifyPluginAsync } from "fastify";
+import { countMp3Frames } from "../domain/mp3-frame-counter";
 import { AppError } from "../lib/error-handling";
 import { ErrorCodes } from "../lib/error-handling/app-error";
-import { countMp3Frames } from "../domain/mp3-frame-counter";
 
 export const routes: FastifyPluginAsync = async (app: FastifyInstance) => {
   app.post(

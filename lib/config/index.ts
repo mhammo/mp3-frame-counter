@@ -1,5 +1,6 @@
 import convict from "convict";
-import { Config, configSchema } from "./schema";
+import type { Config} from "./schema";
+import { configSchema } from "./schema";
 
 let convictConfigurationProvider: convict.Config<Config> | undefined;
 

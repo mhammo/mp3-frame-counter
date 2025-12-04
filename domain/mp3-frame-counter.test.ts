@@ -1,8 +1,8 @@
-import { test, expect } from "vitest";
-import { countMp3Frames } from "./mp3-frame-counter";
-import { join } from "node:path";
 import { createReadStream } from "node:fs";
+import { join } from "node:path";
+import { test, expect } from "vitest";
 import { AppError } from "../lib/error-handling";
+import { countMp3Frames } from "./mp3-frame-counter";
 
 // These tests are validated using mediainfo frame counts:
 // https://mediaarea.net/en/MediaInfo

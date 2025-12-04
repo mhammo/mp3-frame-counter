@@ -1,17 +1,17 @@
-import { test, expect, afterAll, beforeAll } from "vitest";
-import { join } from "node:path";
 import { createReadStream } from "node:fs";
-import { initConfigProvider } from "../../lib/config";
-import { startWebServer, stopWebServer } from "../../api/server";
-import { AddressInfo } from "node:net";
+import type { AddressInfo } from "node:net";
+import { join } from "node:path";
 import axios from "axios";
 import FormData from "form-data";
+import { test, expect, afterAll, beforeAll } from "vitest";
+import { startWebServer, stopWebServer } from "../../api/server";
+import { initConfigProvider } from "../../lib/config";
 
 let addressInfo: AddressInfo | null;
 
 beforeAll(async () => {
   // Use an ephemeral port value.
-  initConfigProvider({ LOGGING_ENABLED: "false", PORT: "0" });
+  initConfigProvider({ PORT: "0" });
   addressInfo = await startWebServer();
 });
 

@@ -1,7 +1,7 @@
-import { errorHandler } from "./lib/error-handling";
-import { logger } from "./lib/monitoring";
 import { startWebServer } from "./api/server";
 import { getConfigValue, initConfigProvider } from "./lib/config";
+import { errorHandler } from "./lib/error-handling";
+import { logger } from "./lib/monitoring";
 
 errorHandler.listenToErrorEvents();
 initConfigProvider();

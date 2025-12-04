@@ -1,16 +1,17 @@
+import type { Server } from "http";
+import type { AddressInfo } from "net";
+import { randomUUID } from "node:crypto";
 import cors from "@fastify/cors";
+import fastifyMultipart from "@fastify/multipart";
 import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
-import fastifyMultipart from "@fastify/multipart";
-import Fastify, { FastifyInstance } from "fastify";
-import { Server } from "http";
-import { AddressInfo } from "net";
+import type { FastifyInstance } from "fastify";
+import Fastify from "fastify";
+import { getConfigValue } from "../lib/config";
+import { errorMiddleware } from "../lib/error-handling";
 import { logger, requestContextPlugin } from "../lib/monitoring";
 import { openAPIOptions, openAPIUIOptions } from "./openapi-options";
 import { routes } from "./routes";
-import { errorMiddleware } from "../lib/error-handling";
-import { getConfigValue } from "../lib/config";
-import { randomUUID } from "node:crypto";
 
 let httpServer: Server | undefined;
 
