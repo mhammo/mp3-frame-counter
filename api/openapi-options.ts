@@ -1,5 +1,5 @@
-import { FastifyDynamicSwaggerOptions } from "@fastify/swagger";
-import { FastifySwaggerUiOptions } from "@fastify/swagger-ui";
+import type { FastifyDynamicSwaggerOptions } from "@fastify/swagger";
+import type { FastifySwaggerUiOptions } from "@fastify/swagger-ui";
 
 export const openAPIOptions: FastifyDynamicSwaggerOptions = {
   openapi: {
@@ -8,6 +8,8 @@ export const openAPIOptions: FastifyDynamicSwaggerOptions = {
       description: "MP3 File Analysis service API ",
       version: "0.0.1",
     },
+
+    servers: [{ url: "http://localhost:3000", description: "Local Instance" }],
   },
 };
 

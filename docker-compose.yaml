@@ -1,0 +1,9 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    command: node .dist/start.js
+    environment:
+      - LOG_LEVEL=debug
+      - PRETTY_PRINT=true

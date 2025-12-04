@@ -1,0 +1,12 @@
+node_modules
+README.md
+.pnpm-store
+.git
+Dockerfile
+.env
+.vscode
+npm-debug.log*
+pnpm-debug.log*
+.vite.config.js
+*.test.ts
+test
