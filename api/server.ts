@@ -67,7 +67,7 @@ async function listenToRequests(app: FastifyInstance): Promise<AddressInfo> {
 async function registerCommonPlugins(app: FastifyInstance) {
   app.register(fastifyMultipart, {
     limits: {
-      fileSize: 10 * 1024 * 1024,
+      fileSize: 100 * 1024 * 1024,
     },
   });
   requestContextPlugin(app);
