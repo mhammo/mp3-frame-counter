@@ -14,25 +14,27 @@ const ID3_HEADER_SIZE = 10;
 
 const MPEG_FRAME_HEADER_SIZE = 4;
 
+const VBR_HEADER_SIZE = 12;
+
+const CHANNEL_MODE_MONO = 3;
+
 export async function countMp3Frames(stream: Readable): Promise<number> {
   return new Promise((resolve, reject) => {
     let pending = Buffer.alloc(0);
     let pos = 0;
-
-    let channelMode = 0;
+    let vbrOffset = 0;
     let skipBytes = 0;
-
     let expectingVBRHeader = false;
     let frameCount = 0;
 
     stream.on("data", (chunk) => {
       pending = Buffer.concat([pending, chunk]);
 
-      // skip ID3v2 Tag
+      // Skip ID3v2 Tag.
       if (pos === 0 && pending.length >= ID3_HEADER_SIZE) {
         if (pending.subarray(0, 3).toString() === "ID3") {
-          const size = readSyncSafeInteger(pending.subarray(6, 10));
-          skipBytes = ID3_HEADER_SIZE + size;
+          const id3TagSize = readSyncSafeInteger(pending.subarray(6, 10));
+          skipBytes = ID3_HEADER_SIZE + id3TagSize;
 
           if (pending.length < skipBytes) return; // wait for more bytes
 
@@ -43,7 +45,7 @@ export async function countMp3Frames(stream: Readable): Promise<number> {
         }
       }
 
-      // validate first frame header
+      // Validate first frame header and get the channel for the VBR offset.
       if (pos === skipBytes && pending.length >= MPEG_FRAME_HEADER_SIZE) {
         const frameHeader = pending.readUInt32BE(0);
         const appErr = validateFrameHeader(frameHeader);
@@ -55,21 +57,18 @@ export async function countMp3Frames(stream: Readable): Promise<number> {
 
         logger.debug("validated first frame header successfully");
 
-        channelMode = (frameHeader >>> 6) & 0x3;
+        vbrOffset = getVbrOffset(frameHeader);
         expectingVBRHeader = true;
       }
 
-      // check for and skip VBR header
+      // Check for and skip VBR header.
       if (expectingVBRHeader) {
-        const vbrOffset = (channelMode === 3 ? 17 : 32) + 4;
-        const required = vbrOffset + 12;
-
-        if (pending.length >= required) {
-          const vb = pending.subarray(4 + (channelMode === 3 ? 17 : 32));
+        if (pending.length >= vbrOffset + VBR_HEADER_SIZE) {
+          const vb = pending.subarray(vbrOffset);
           const tag = vb.subarray(0, 4).toString();
 
           if (tag === "Xing" || tag === "Info") {
-            // TODO: The frame count in the Xing/Info header seems to have 1 extra frame in comparison to mediainfo,
+            // TODO: The frame count in the VBR header seems to have 1 extra frame in comparison to mediainfo,
             // so I'm not relying on this.
             //
             // I'm guessing mediainfo filters out non-audio metadata... it'd need further investigation but it
@@ -102,7 +101,7 @@ export async function countMp3Frames(stream: Readable): Promise<number> {
         }
       }
 
-      // count all audio frames
+      // Loop through all audio frames in this chunk.
       while (pending.length >= MPEG_FRAME_HEADER_SIZE) {
         const frameHeader = pending.readUInt32BE(0);
 
@@ -118,7 +117,7 @@ export async function countMp3Frames(stream: Readable): Promise<number> {
 
         const frameLength = getFrameLength(frameHeader);
 
-        // Not enough data to complete frame yet
+        // Wait for more data.
         if (pending.length < frameLength) break;
 
         pending = pending.subarray(frameLength);
@@ -167,6 +166,17 @@ function validateFrameHeader(frameHeader: number): Error | null {
   }
 
   return null;
+}
+
+/**
+ * This gets the channel from the frame header, which we can use to determine
+ * the "side info" size based on whether it's mono or stereo. This gives us
+ * the starting offset for the VBR header.
+ */
+function getVbrOffset(frameHeader: number): number {
+  const channelMode = (frameHeader >>> 6) & 0x3;
+  const sideInfoSize = channelMode === CHANNEL_MODE_MONO ? 17 : 32;
+  return sideInfoSize + MPEG_FRAME_HEADER_SIZE;
 }
 
 /**
