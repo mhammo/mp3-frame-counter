@@ -12,7 +12,7 @@
 
 #### Commands
 
-```bash
+```sh
 # If you're not using NVM, ignore this.
 nvm use
 
@@ -28,7 +28,7 @@ pnpm start:dev
 
 #### Commands
 
-```bash
+```sh
 docker compose up
 ```
 
@@ -42,7 +42,7 @@ If you want to test the service manually, you can either:
 
 ## Testing
 
-```bash
+```sh
 pnpm test
 
 # Will re-run the tests when you edit a file.
@@ -52,11 +52,11 @@ pnpm test:watch
 pnpm test:watch:verbose
 ```
 
-I've it focuses the unit tests on the MP3 frame counter, and the rest is validated with "integration testing" (though there are no external integrations, strictly speaking).
+I've focused the unit tests on the MP3 frame counter, and the rest is validated with "integration testing" (though there are no external integrations, strictly speaking).
 
 ## Linting and Formatting
 
-```bash
+```sh
 pnpm lint
 
 # Use this to automatically fix linter issues.
@@ -68,14 +68,14 @@ pnpm format
 
 ## Build
 
-```bash
+```sh
 pnpm build
 
 # To run the built project locally, use the following:
 pnpm start
 ```
 
-## Potential Improvements
+## Potential Improvements
 
 The fastify plugin for multipart form data support is a bit awkward. Another framework _might_ be a better fit for something like this.
 
